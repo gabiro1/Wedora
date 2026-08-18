@@ -3,9 +3,10 @@ import { Server } from "socket.io";
 let io;
 
 export const initSocket = (httpServer) => {
+  const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(",").map((o) => o.trim());
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+      origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin)) { callback(null, true); } else { callback(new Error("Not allowed by CORS")); } },
       methods: ["GET", "POST"],
       credentials: true,
     },
