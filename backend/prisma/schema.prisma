@@ -1,0 +1,475 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USER & AUTH ──────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  phone         String?
+  avatar        String?
+  role          UserRole  @default(ORGANIZER)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens  RefreshToken[]
+  weddings       WeddingMember[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ORGANIZER
+  COUPLE
+  MC
+  GIFT_STAFF
+  GUEST
+}
+
+// ─── WEDDING ──────────────────────────────────────────────
+
+model Wedding {
+  id              String         @id @default(uuid())
+  eventToken      String         @unique @map("event_token")
+  coupleName      String         @map("couple_name")
+  partnerName     String         @map("partner_name")
+  weddingDate     DateTime       @map("wedding_date")
+  location        String?
+  description     String?
+  coverImage      String?        @map("cover_image")
+  primaryLanguage String         @default("en") @map("primary_language")
+  timezone        String         @default("Africa/Kigali")
+  status          WeddingStatus  @default(DRAFT)
+  isPrivate       Boolean        @default(true) @map("is_private")
+  passwordHash    String?        @map("password_hash")
+  settings        Json           @default("{}")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  members       WeddingMember[]
+  guests        Guest[]
+  contributions Contribution[]
+  memories      Memory[]
+  themes        WeddingTheme[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  duplicateGroups    DuplicateGroup[]
+  highlights         WeddingHighlights?
+  album              WeddingAlbum?
+  story              WeddingStory?
+  aiProcessingLogs   AIProcessingLog[]
+
+  @@map("weddings")
+}
+
+enum WeddingStatus {
+  DRAFT
+  ACTIVE
+  CELEBRATION
+  COMPLETED
+  ARCHIVED
+}
+
+model WeddingMember {
+  id         String     @id @default(uuid())
+  userId     String     @map("user_id")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weddingId  String     @map("wedding_id")
+  wedding    Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  role       WeddingRole
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@unique([userId, weddingId])
+  @@map("wedding_members")
+}
+
+enum WeddingRole {
+  OWNER
+  COUPLE
+  MC
+  GIFT_STAFF
+  MODERATOR
+}
+
+// ─── GUEST ────────────────────────────────────────────────
+
+model Guest {
+  id            String   @id @default(uuid())
+  weddingId     String   @map("wedding_id")
+  wedding       Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  email         String?
+  token         String   @unique
+  isAnonymous   Boolean  @default(false) @map("is_anonymous")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  contributions Contribution[]
+  memories      Memory[]
+
+  @@map("guests")
+}
+
+// ─── CONTRIBUTION ─────────────────────────────────────────
+
+model Contribution {
+  id              String             @id @default(uuid())
+  weddingId       String             @map("wedding_id")
+  wedding         Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guestId         String?            @map("guest_id")
+  guest           Guest?             @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  guestName       String             @map("guest_name")
+  guestPhone      String?            @map("guest_phone")
+  type            ContributionType
+  description     String?
+  monetaryAmount  Decimal?           @db.Decimal(12, 2) @map("monetary_amount")
+  currency        String             @default("RWF")
+  status          ContributionStatus @default(PENDING)
+  isAcknowledged  Boolean            @default(false) @map("is_acknowledged")
+  acknowledgedAt  DateTime?          @map("acknowledged_at")
+  queuePosition   Int?               @map("queue_position")
+  verifiedBy      String?            @map("verified_by")
+  verifiedAt      DateTime?          @map("verified_at")
+  notes           String?
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  queueEntries ContributionQueue[]
+
+  @@map("contributions")
+}
+
+enum ContributionType {
+  PHYSICAL_GIFT
+  MONETARY
+  OTHER
+  MESSAGE
+}
+
+enum ContributionStatus {
+  PENDING
+  ACKNOWLEDGED
+  VERIFIED
+  ARCHIVED
+}
+
+model ContributionQueue {
+  id              String       @id @default(uuid())
+  contributionId  String       @unique @map("contribution_id")
+  contribution    Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  weddingId       String       @map("wedding_id")
+  position        Int
+  isCurrent       Boolean      @default(false) @map("is_current")
+  isAcknowledged  Boolean      @default(false) @map("is_acknowledged")
+  acknowledgedAt  DateTime?    @map("acknowledged_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@map("contribution_queue")
+}
+
+// ─── MEMORY / MEDIA ──────────────────────────────────────
+
+model Memory {
+  id               String           @id @default(uuid())
+  weddingId        String           @map("wedding_id")
+  wedding          Wedding          @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guestId          String?          @map("guest_id")
+  guest            Guest?           @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  guestName        String?          @map("guest_name")
+  mediaType        MediaType        @map("media_type")
+  storageUrl       String           @map("storage_url")
+  thumbnailUrl     String?          @map("thumbnail_url")
+  publicId         String?          @map("public_id")
+  fileSize         Int              @map("file_size")
+  duration         Int?
+  mimeType         String           @map("mime_type")
+  width            Int?
+  height           Int?
+  moderationStatus ModerationStatus @default(PENDING) @map("moderation_status")
+  caption          String?
+  tags             String[]
+  isFavorite       Boolean          @default(false) @map("is_favorite")
+  viewCount        Int              @default(0) @map("view_count")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  reports       MemoryReport[]
+  analysis      MemoryAnalysis?
+  duplicateGroup DuplicateGroupMember?
+
+  @@map("memories")
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REPORTED
+  REMOVED
+}
+
+model MemoryReport {
+  id         String   @id @default(uuid())
+  memoryId   String   @map("memory_id")
+  memory     Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  reporterIp String?  @map("reporter_ip")
+  reason     String
+  status     ReportStatus @default(PENDING)
+  resolvedBy String?  @map("resolved_by")
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("memory_reports")
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+// ─── THEME ────────────────────────────────────────────────
+
+model WeddingTheme {
+  id        String   @id @default(uuid())
+  weddingId String   @map("wedding_id")
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name      String
+  primary   String   @default("#8B7355")
+  secondary String   @default("#F5F0EB")
+  accent    String   @default("#C9A96E")
+  background String  @default("#FDFBF7")
+  text      String   @default("#2C2C2C")
+  font      String   @default("Inter")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("wedding_themes")
+}
+
+// ─── NOTIFICATION ─────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  weddingId String   @map("wedding_id")
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+// ─── AUDIT LOG ────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  weddingId String?  @map("wedding_id")
+  wedding   Wedding? @relation(fields: [weddingId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+// ─── AI MODELS ────────────────────────────────────────────
+
+model MemoryAnalysis {
+  id               String   @id @default(uuid())
+  memoryId         String   @unique @map("memory_id")
+  memory           Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  qualityScore     Int      @default(0) @map("quality_score")
+  qualityGrade     String   @default("UNGRADED") @map("quality_grade")
+  blurScore        Float    @default(0) @map("blur_score")
+  exposureScore    Float    @default(0) @map("exposure_score")
+  brightnessScore  Float    @default(0) @map("brightness_score")
+  contrastScore    Float    @default(0) @map("contrast_score")
+  sharpnessScore   Float    @default(0) @map("sharpness_score")
+  noiseScore       Float    @default(0) @map("noise_score")
+  resolutionScore  Float    @default(0) @map("resolution_score")
+  compositionScore Float    @default(0) @map("composition_score")
+  perceptualHash   String?  @map("perceptual_hash")
+  colorHistogram   Json?    @map("color_histogram")
+  dominantColors   String[] @map("dominant_colors")
+  aiTags           String[] @map("ai_tags")
+  aiCategory       String?  @map("ai_category")
+  aiDescription    String?  @map("ai_description")
+  processingStatus String   @default("PENDING") @map("processing_status")
+  processingError  String?  @map("processing_error")
+  processedAt      DateTime? @map("processed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("memory_analyses")
+}
+
+model DuplicateGroup {
+  id               String   @id @default(uuid())
+  weddingId        String   @map("wedding_id")
+  wedding          Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  groupSize        Int      @default(0) @map("group_size")
+  similarityScore  Float    @default(0) @map("similarity_score")
+  recommendedId    String?  @map("recommended_id")
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  members DuplicateGroupMember[]
+
+  @@map("duplicate_groups")
+}
+
+model DuplicateGroupMember {
+  id              String         @id @default(uuid())
+  groupId         String         @map("group_id")
+  group           DuplicateGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  memoryId        String         @unique @map("memory_id")
+  memory          Memory         @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  similarityScore Float          @default(0) @map("similarity_score")
+  isRecommended   Boolean        @default(false) @map("is_recommended")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@map("duplicate_group_members")
+}
+
+model WeddingHighlights {
+  id               String   @id @default(uuid())
+  weddingId        String   @unique @map("wedding_id")
+  wedding          Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title            String   @default("Wedding Highlights")
+  totalCount       Int      @default(0)
+  coupleMoments    Int      @default(0) @map("couple_moments")
+  familyMoments    Int      @default(0) @map("family_moments")
+  ceremonyMoments  Int      @default(0) @map("ceremony_moments")
+  receptionMoments Int      @default(0) @map("reception_moments")
+  friendMoments    Int      @default(0) @map("friend_moments")
+  status           String   @default("PENDING")
+  lastGeneratedAt  DateTime? @map("last_generated_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  items HighlightItem[]
+
+  @@map("wedding_highlights")
+}
+
+model HighlightItem {
+  id           String           @id @default(uuid())
+  highlightsId String           @map("highlights_id")
+  highlights   WeddingHighlights @relation(fields: [highlightsId], references: [id], onDelete: Cascade)
+  memoryId     String           @map("memory_id")
+  position     Int
+  category     String           @default("OTHER")
+  reason       String?
+  score        Float            @default(0)
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@map("highlight_items")
+}
+
+model WeddingAlbum {
+  id            String   @id @default(uuid())
+  weddingId     String   @unique @map("wedding_id")
+  wedding       Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title         String   @default("Our Wedding Day")
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sections AlbumSection[]
+
+  @@map("wedding_albums")
+}
+
+model AlbumSection {
+  id        String   @id @default(uuid())
+  albumId   String   @map("album_id")
+  album     WeddingAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  title     String
+  position  Int
+  coverUrl  String?  @map("cover_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  items AlbumSectionItem[]
+
+  @@map("album_sections")
+}
+
+model AlbumSectionItem {
+  id        String   @id @default(uuid())
+  sectionId String   @map("section_id")
+  section   AlbumSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  memoryId  String   @map("memory_id")
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("album_section_items")
+}
+
+model WeddingStory {
+  id          String   @id @default(uuid())
+  weddingId   String   @unique @map("wedding_id")
+  wedding     Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title       String   @default("A Day to Remember")
+  content     String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("wedding_stories")
+}
+
+model AIProcessingLog {
+  id          String   @id @default(uuid())
+  weddingId   String   @map("wedding_id")
+  wedding     Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  type        String
+  status      String   @default("PENDING")
+  totalItems  Int      @default(0) @map("total_items")
+  processed   Int      @default(0)
+  failed      Int      @default(0)
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  error       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("ai_processing_logs")
+}
