@@ -4,15 +4,16 @@ import { initSocket } from "./config/socket.js";
 import { env } from "./config/env.js";
 
 const httpServer = createServer(app);
+
 initSocket(httpServer);
 
-httpServer.listen(env.PORT, () => {
+httpServer.listen(env.PORT, "0.0.0.0", () => {
   console.log(`
   ╔══════════════════════════════════════════╗
   ║          WEDORA SERVER RUNNING           ║
-  ║  Port: ${env.PORT}                              ║
+  ║  Port: ${env.PORT}                       ║
   ║  Mode: ${env.NODE_ENV.padEnd(33)}║
-  ║  http://localhost:${env.PORT}                  ║
+  ║  Server started successfully             ║
   ╚══════════════════════════════════════════╝
   `);
 });
