@@ -1,9 +1,11 @@
 "use client";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = typeof window !== "undefined"
-  ? `${window.location.protocol}//${window.location.hostname}:5000`
-  : (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000");
+const SOCKET_URL = (typeof window !== "undefined" && process.env.NEXT_PUBLIC_SOCKET_URL)
+  ? process.env.NEXT_PUBLIC_SOCKET_URL
+  : (typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:5000`
+    : (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000"));
 
 let socket = null;
 

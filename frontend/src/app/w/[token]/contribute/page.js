@@ -35,7 +35,7 @@ export default function ContributePage({ params }) {
       if (form.type !== "MONETARY") delete body.monetaryAmount;
       if (!body.description) delete body.description;
       if (!body.notes) delete body.notes;
-      await fetch(`${typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:5000/api` : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/guest/${token}/contribute`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`}/guest/${token}/contribute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

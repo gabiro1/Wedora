@@ -17,7 +17,7 @@ export default function MCQueuePage({ params }) {
     api.get(`/weddings/${weddingId}/contributions/queue`).then((res) => setQueue(res.data)).catch(() => {});
 
     // Connect socket
-    const socket = io(typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:5000` : process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}:5000`, {
       withCredentials: true, reconnection: true,
     });
     socketRef.current = socket;

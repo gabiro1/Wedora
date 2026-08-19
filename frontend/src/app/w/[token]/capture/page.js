@@ -91,7 +91,7 @@ export default function CapturePage({ params }) {
       await new Promise((resolve, reject) => {
         xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error("Upload failed")); };
         xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("POST", `${typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:5000/api` : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/guest/${token}/capture`);
+        xhr.open("POST", `${process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`}/guest/${token}/capture`);
         xhr.setRequestHeader("X-Guest-Token", `guest_${token}`);
         xhr.send(fd);
       });
