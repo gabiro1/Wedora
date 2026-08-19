@@ -1,0 +1,1 @@
+UPDATE users SET password_hash = '$2a$10$ef0vuuhZmLvO3osVhnYnaO/4QFkZ/DVt4fyi8FzhmeI7RkSk8HaeC' WHERE email = 'organizer@wedora.com';

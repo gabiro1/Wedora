@@ -57,9 +57,8 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm">&copy; {new Date().getFullYear()} Wedora. All rights reserved.</p>
           <div className="flex items-center gap-1.5 text-sm">
-            <span>Made with</span>
-            <Heart className="h-3.5 w-3.5 text-muted-gold fill-muted-gold animate-pulse" />
-            <span>in Rwanda</span>
+            <span>Made By Jovial Fleuron</span>
+            
           </div>
         </div>
       </div>
