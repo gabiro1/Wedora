@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, use } from "react";
 import api from "@/lib/api";
-import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Heart, Download } from "lucide-react";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
 import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
@@ -26,6 +26,23 @@ export default function GalleryPage({ params }) {
   useEffect(() => { load(); }, []);
 
   const loadMore = () => { const next = page + 1; setPage(next); load(next); };
+
+  const download = async (m) => {
+    try {
+      const res = await fetch(m.storageUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wedora-memory-${m.id}.${m.mediaType === "VIDEO" ? "mp4" : "jpg"}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(m.storageUrl, "_blank");
+    }
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -84,6 +101,13 @@ export default function GalleryPage({ params }) {
       {/* Lightbox */}
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={() => setSelected(null)}>
+          <button
+            onClick={(e) => { e.stopPropagation(); download(selected); }}
+            className="absolute top-4 right-14 text-white/60 hover:text-white p-2"
+            aria-label="Download"
+          >
+            <Download className="h-6 w-6" />
+          </button>
           <button className="absolute top-4 right-4 text-white/60 hover:text-white p-2"><X className="h-6 w-6" /></button>
           <div className="max-w-4xl max-h-[90vh] w-full px-4" onClick={(e) => e.stopPropagation()}>
             {selected.mediaType === "PHOTO" ? (

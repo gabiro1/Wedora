@@ -4,7 +4,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import EmptyState from "@/components/ui/EmptyState";
 import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
-import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Play, Images } from "lucide-react";
+import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Play, Images, Download } from "lucide-react";
 
 export default function MemoriesPage({ params }) {
   const { token } = use(params);
@@ -60,6 +60,23 @@ export default function MemoriesPage({ params }) {
   const showNext = () => {
     const idx = memories.findIndex((m) => m.id === selected.id);
     setSelected(memories[(idx + 1) % memories.length]);
+  };
+
+  const download = async (m) => {
+    try {
+      const res = await fetch(m.storageUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wedora-memory-${m.id}.${m.mediaType === "VIDEO" ? "mp4" : "jpg"}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(m.storageUrl, "_blank");
+    }
   };
 
   useEffect(() => {
@@ -169,6 +186,13 @@ export default function MemoriesPage({ params }) {
       {/* Lightbox */}
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setSelected(null)}>
+          <button
+            onClick={(e) => { e.stopPropagation(); download(selected); }}
+            className="absolute top-4 right-14 text-white/60 hover:text-white p-2 z-10"
+            aria-label="Download"
+          >
+            <Download className="h-6 w-6" />
+          </button>
           <button className="absolute top-4 right-4 text-white/60 hover:text-white p-2 z-10" aria-label="Close">
             <X className="h-6 w-6" />
           </button>
