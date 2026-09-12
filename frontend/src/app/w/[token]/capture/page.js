@@ -88,13 +88,30 @@ export default function CapturePage({ params }) {
         if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
       });
 
+      let uploaded = null;
       await new Promise((resolve, reject) => {
-        xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error("Upload failed")); };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { uploaded = JSON.parse(xhr.responseText).data; } catch {}
+            resolve();
+          } else {
+            reject(new Error("Upload failed"));
+          }
+        };
         xhr.onerror = () => reject(new Error("Network error"));
         xhr.open("POST", `${process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`}/guest/${token}/capture`);
         xhr.setRequestHeader("X-Guest-Token", `guest_${token}`);
         xhr.send(fd);
       });
+
+      if (uploaded?.id) {
+        const key = `wedora_my_memories_${token}`;
+        try {
+          const saved = JSON.parse(localStorage.getItem(key) || "[]");
+          if (!saved.some((m) => m.id === uploaded.id)) saved.push(uploaded);
+          localStorage.setItem(key, JSON.stringify(saved));
+        } catch {}
+      }
 
       setStep("done");
     } catch (err) {

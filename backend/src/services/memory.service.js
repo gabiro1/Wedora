@@ -74,7 +74,7 @@ class MemoryService {
 
         caption: data.caption || null,
 
-        moderationStatus: "PENDING",
+        moderationStatus: "APPROVED",
       },
     });
 
@@ -84,6 +84,16 @@ class MemoryService {
       mediaType,
       guestName: data.guestName,
       timestamp: memory.createdAt,
+    });
+
+    // Uploads appear on the live wall immediately (no manual approval)
+    emitToWall(weddingId, "memory:approved", {
+      id: memory.id,
+      storageUrl,
+      thumbnailUrl,
+      mediaType,
+      guestName: data.guestName,
+      caption: data.caption,
     });
 
     return memory;

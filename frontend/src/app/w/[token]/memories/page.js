@@ -19,7 +19,19 @@ export default function MemoriesPage({ params }) {
   const load = (p = 1, append = false) => {
     api.get(`/guest/${token}/memories?page=${p}&limit=30`)
       .then((res) => {
-        setMemories((prev) => (append ? [...prev, ...res.data.memories] : res.data.memories));
+        const serverMemories = res.data.memories || [];
+        if (append) {
+          setMemories((prev) => [...prev, ...serverMemories]);
+        } else {
+          let merged = [...serverMemories];
+          try {
+            const mine = JSON.parse(localStorage.getItem(`wedora_my_memories_${token}`) || "[]");
+            mine.forEach((m) => {
+              if (m?.id && !merged.some((x) => x.id === m.id)) merged.unshift(m);
+            });
+          } catch {}
+          setMemories(merged);
+        }
         setTotalPages(res.data.totalPages);
         setPage(p);
       })
