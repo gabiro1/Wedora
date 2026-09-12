@@ -159,13 +159,9 @@ class MemoryService {
   }
 
   async list(weddingId, filters) {
-    const {
-      page = 1,
-      limit = 20,
-      mediaType,
-      moderationStatus,
-      sort,
-    } = filters;
+    const page = parseInt(filters.page, 10) || 1;
+    const limit = parseInt(filters.limit, 10) || 20;
+    const { mediaType, moderationStatus, sort } = filters;
 
     const skip = (page - 1) * limit;
 
@@ -201,6 +197,48 @@ class MemoryService {
       prisma.memory.count({
         where,
       }),
+    ]);
+
+    return {
+      memories,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getPublicGallery(weddingId, filters = {}) {
+    const page = parseInt(filters.page, 10) || 1;
+    const limit = Math.min(parseInt(filters.limit, 10) || 30, 60);
+
+    const where = {
+      weddingId,
+      moderationStatus: "APPROVED",
+    };
+
+    const orderBy =
+      filters.sort === "oldest"
+        ? { createdAt: "asc" }
+        : { createdAt: "desc" };
+
+    const [memories, total] = await Promise.all([
+      prisma.memory.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy,
+        select: {
+          id: true,
+          mediaType: true,
+          storageUrl: true,
+          thumbnailUrl: true,
+          guestName: true,
+          caption: true,
+          createdAt: true,
+        },
+      }),
+      prisma.memory.count({ where }),
     ]);
 
     return {

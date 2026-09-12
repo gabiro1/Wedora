@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { Heart, Camera, Sparkles } from "lucide-react";
+import { Heart, Camera, Sparkles, Images } from "lucide-react";
 
 export default function GuestWelcomePage({ params }) {
   const { token } = use(params);
@@ -81,6 +81,14 @@ export default function GuestWelcomePage({ params }) {
               Register Contribution
             </Link>
           </div>
+
+          <Link
+            href={`/w/${token}/memories`}
+            className="mt-8 inline-flex items-center justify-center gap-2 h-12 px-6 text-warm-gray hover:text-muted-gold transition-colors font-display text-lg"
+          >
+            <Images className="h-5 w-5" />
+            View the Memory Wall
+          </Link>
         </div>
       </div>
 

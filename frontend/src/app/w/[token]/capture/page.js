@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, use } from "react";
 import api from "@/lib/api";
 import Button from "@/components/ui/Button";
-import { Camera, Video, RotateCcw, Upload, X, ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
+import { Camera, Video, RotateCcw, Upload, X, ArrowLeft, CheckCircle, Loader2, Images } from "lucide-react";
 import Link from "next/link";
 
 export default function CapturePage({ params }) {
@@ -234,6 +234,13 @@ export default function CapturePage({ params }) {
                 <Button>Done</Button>
               </Link>
             </div>
+            <Link
+              href={`/w/${token}/memories`}
+              className="mt-6 inline-flex items-center justify-center gap-2 h-12 px-8 border border-border bg-white rounded-lg font-medium text-foreground hover:bg-champagne transition-all"
+            >
+              <Images className="h-5 w-5 text-muted-gold" />
+              View All Memories
+            </Link>
           </div>
         </div>
       )}

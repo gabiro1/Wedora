@@ -51,6 +51,16 @@ app.post("/api/guest/:eventToken/contribute", validate(createContributionSchema)
   } catch (err) { next(err); }
 });
 
+app.get("/api/guest/:eventToken/memories", async (req, res, next) => {
+  try {
+    const wedding = await prisma.wedding.findUnique({ where: { eventToken: req.params.eventToken } });
+    if (!wedding) return res.status(404).json({ success: false, message: "Wedding not found" });
+    const { memoryService } = await import("./services/memory.service.js");
+    const result = await memoryService.getPublicGallery(wedding.id, req.query);
+    res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+});
+
 app.post("/api/guest/:eventToken/capture", multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }).single("file"), async (req, res, next) => {
   try {
     const wedding = await prisma.wedding.findUnique({ where: { eventToken: req.params.eventToken } });

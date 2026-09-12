@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
+import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
 
 export default function GalleryPage({ params }) {
   const { id } = use(params);
@@ -41,27 +42,31 @@ export default function GalleryPage({ params }) {
         <EmptyState icon={Camera} title="No approved memories" description="Approved photos and videos will appear here." />
       ) : (
         <>
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-            {memories.map((m) => (
+          <div className={BENTO_GRID}>
+            {memories.map((m, i) => (
               <div
                 key={m.id}
-                className="break-inside-avoid cursor-pointer group relative rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300"
+                className={cn(bentoSpan(i), "group relative cursor-pointer")}
                 onClick={() => setSelected(m)}
               >
-                {m.mediaType === "PHOTO" ? (
-                  <img src={m.thumbnailUrl || m.storageUrl} alt="" className="w-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="relative">
-                    <video src={m.storageUrl} className="w-full object-cover" preload="metadata" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <div className="h-10 w-10 rounded-full bg-white/80 flex items-center justify-center">
+                <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                  {m.mediaType === "PHOTO" ? (
+                    <img src={m.thumbnailUrl || m.storageUrl} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
+                  ) : (
+                    <video src={m.storageUrl} className="h-full w-full object-cover" preload="metadata" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-brown/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  {m.mediaType === "VIDEO" && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-11 w-11 rounded-full bg-white/80 flex items-center justify-center">
                         <div className="h-0 w-0 border-t-8 border-b-8 border-l-12 border-t-transparent border-b-transparent border-l-deep-brown ml-1" />
                       </div>
                     </div>
+                  )}
+                  <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <p className="text-white text-sm font-medium">{m.guestName || "Anonymous"}</p>
                   </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-white text-xs">{m.guestName || "Anonymous"}</p>
                 </div>
               </div>
             ))}

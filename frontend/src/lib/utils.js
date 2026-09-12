@@ -29,3 +29,19 @@ export function timeAgo(date) {
 export function getInitials(firstName, lastName) {
   return `${(firstName || "")[0] || ""}${(lastName || "")[0] || ""}`.toUpperCase();
 }
+
+const BENTO_SPANS = [
+  "col-span-2 row-span-2",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-2",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-2 row-span-1",
+  "col-span-1 row-span-1",
+];
+
+export function bentoSpan(index) {
+  return BENTO_SPANS[index % BENTO_SPANS.length];
+}
+
+export const BENTO_GRID = "grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[180px] md:auto-rows-[220px] grid-flow-dense";

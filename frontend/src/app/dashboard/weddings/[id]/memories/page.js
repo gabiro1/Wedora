@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
+import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
 import { Camera, ArrowLeft, Check, X, Trash2, Flag, Heart } from "lucide-react";
 import Link from "next/link";
 
@@ -58,25 +59,41 @@ export default function MemoriesPage({ params }) {
       {data && data.memories.length === 0 ? (
         <EmptyState icon={Camera} title="No memories" description={`No ${filter.toLowerCase()} memories to display.`} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data?.memories.map((m) => (
-            <div key={m.id} className="bg-white rounded-xl border border-border overflow-hidden group">
-              <div className="aspect-square bg-champagne relative overflow-hidden">
+        <div className={BENTO_GRID}>
+          {data?.memories.map((m, i) => (
+            <div key={m.id} className={cn(bentoSpan(i), "group relative")}>
+              <div className="relative h-full w-full rounded-2xl overflow-hidden bg-charcoal border border-border shadow-sm hover:shadow-lg transition-all duration-300">
                 {m.mediaType === "PHOTO" ? (
-                  <img src={m.thumbnailUrl || m.storageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <img src={m.thumbnailUrl || m.storageUrl} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                 ) : (
-                  <video src={m.storageUrl} className="w-full h-full object-cover" preload="metadata" />
+                  <video src={m.storageUrl} className="h-full w-full object-cover" preload="metadata" />
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
                 <div className="absolute top-2 right-2">
                   <Badge variant={modColors[m.moderationStatus]}>{m.moderationStatus}</Badge>
                 </div>
-              </div>
-              <div className="p-4">
-                <p className="text-sm font-medium truncate">{m.guestName || "Anonymous"}</p>
-                {m.caption && <p className="text-xs text-warm-gray truncate mt-1">{m.caption}</p>}
-                <p className="text-xs text-light-gray mt-1">{new Date(m.createdAt).toLocaleString()}</p>
-                {m.moderationStatus === "PENDING" && (
-                  <div className="flex gap-2 mt-3">
+
+                {m.moderationStatus !== "REMOVED" && (
+                  <button
+                    onClick={() => moderate(m.id, "remove")}
+                    className="absolute top-2 left-2 h-8 w-8 rounded-full bg-black/40 text-white/80 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {m.mediaType === "VIDEO" && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full bg-white/80 flex items-center justify-center">
+                      <div className="h-0 w-0 border-t-8 border-b-8 border-l-12 border-t-transparent border-b-transparent border-l-deep-brown ml-1" />
+                    </div>
+                  </div>
+                )}
+
+                {m.moderationStatus === "PENDING" ? (
+                  <div className="absolute bottom-0 inset-x-0 p-3 flex gap-2">
                     <Button size="sm" onClick={() => moderate(m.id, "approve")} className="flex-1">
                       <Check className="h-3.5 w-3.5 mr-1" /> Approve
                     </Button>
@@ -84,11 +101,12 @@ export default function MemoriesPage({ params }) {
                       <X className="h-3.5 w-3.5 mr-1" /> Reject
                     </Button>
                   </div>
-                )}
-                {m.moderationStatus !== "REMOVED" && (
-                  <Button size="sm" variant="ghost" onClick={() => moderate(m.id, "remove")} className="mt-2 w-full text-destructive">
-                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
-                  </Button>
+                ) : (
+                  <div className="absolute bottom-2 left-3 right-3">
+                    <p className="text-white text-sm font-medium truncate">{m.guestName || "Anonymous"}</p>
+                    {m.caption && <p className="text-white/60 text-xs truncate mt-0.5">{m.caption}</p>}
+                    <p className="text-white/40 text-[10px] mt-0.5">{new Date(m.createdAt).toLocaleString()}</p>
+                  </div>
                 )}
               </div>
             </div>
