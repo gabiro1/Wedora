@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import WedoraLogo from "@/components/WedoraLogo";
 import EmptyState from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/Toast";
 import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
@@ -142,6 +143,9 @@ export default function MemoriesPage({ params }) {
             </h1>
             <p className="text-xs text-light-gray">Every moment shared by our guests</p>
           </div>
+          <Link href="/" aria-label="Wedora home">
+            <WedoraLogo className="h-9 w-9" />
+          </Link>
         </div>
       </header>
 

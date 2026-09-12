@@ -7,6 +7,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { Heart, CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import WedoraLogo from "@/components/WedoraLogo";
 
 const TYPES = [
   { value: "PHYSICAL_GIFT", label: "Physical Gift" },
@@ -67,6 +68,9 @@ export default function ContributePage({ params }) {
           >
             <ArrowLeft className="h-4 w-4" /> Back to Wedding
           </Link>
+          <Link href="/" className="mt-8 inline-flex items-center justify-center text-sm text-light-gray font-display hover:text-muted-gold transition-colors" aria-label="Wedora home">
+            Powered by <WedoraLogo className="h-4 w-4 ml-1.5" /> <span className="text-muted-gold font-medium">Wedora</span>
+          </Link>
         </div>
       </div>
     );
@@ -75,9 +79,14 @@ export default function ContributePage({ params }) {
   return (
     <div className="min-h-screen bg-ivory">
       <div className="max-w-lg mx-auto px-4 py-12">
-        <Link href={`/w/${token}`} className="inline-flex items-center gap-1 text-sm text-warm-gray hover:text-foreground mb-8 transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link href={`/w/${token}`} className="inline-flex items-center gap-1 text-sm text-warm-gray hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Link>
+          <Link href="/" aria-label="Wedora home">
+            <WedoraLogo className="h-8 w-8" />
+          </Link>
+        </div>
 
         <div className="text-center mb-10">
           <Heart className="h-8 w-8 text-muted-gold mx-auto mb-4" fill="currentColor" />

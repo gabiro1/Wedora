@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, use } from "react";
 import api from "@/lib/api";
+import WedoraLogo from "@/components/WedoraLogo";
 import Button from "@/components/ui/Button";
 import { Camera, ImagePlus, Video, RotateCcw, Upload, X, ArrowLeft, CheckCircle, Loader2, Images } from "lucide-react";
 import Link from "next/link";
@@ -186,7 +187,9 @@ export default function CapturePage({ params }) {
             <h2 className="text-white font-display text-lg font-medium">
               {wedding?.coupleName || "Capture"}
             </h2>
-            <div className="w-10" />
+            <Link href="/" className="h-10 w-10 flex items-center justify-center" aria-label="Wedora home">
+              <WedoraLogo className="h-9 w-9" />
+            </Link>
           </div>
 
           {/* Mode switch */}

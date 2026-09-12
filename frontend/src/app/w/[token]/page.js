@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import WedoraLogo from "@/components/WedoraLogo";
 import { Heart, Camera, Sparkles, Images } from "lucide-react";
 
 export default function GuestWelcomePage({ params }) {
@@ -46,6 +47,15 @@ export default function GuestWelcomePage({ params }) {
       <div className="fixed inset-0 bg-gradient-to-b from-champagne/30 via-ivory to-ivory pointer-events-none" />
 
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+        <Link
+          href="/"
+          className="absolute top-6 left-6 inline-flex items-center gap-2 group"
+          aria-label="Wedora home"
+        >
+          <WedoraLogo className="h-8 w-8" />
+          <span className="font-display text-lg font-semibold text-deep-brown tracking-tight group-hover:text-muted-gold transition-colors">Wedora</span>
+        </Link>
+
         <div className="animate-fade-in">
           <Sparkles className="h-6 w-6 text-muted-gold mx-auto mb-8" />
 
@@ -93,9 +103,11 @@ export default function GuestWelcomePage({ params }) {
       </div>
 
       <footer className="relative py-6 text-center">
-        <p className="text-xs text-light-gray font-display">
-          Powered by <span className="text-muted-gold font-medium">Wedora</span>
-        </p>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-light-gray font-display hover:text-muted-gold transition-colors" aria-label="Wedora home">
+          Powered by
+          <WedoraLogo className="h-4 w-4" />
+          <span className="text-muted-gold font-medium">Wedora</span>
+        </Link>
       </footer>
     </div>
   );
