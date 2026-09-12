@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, use } from "react";
 import api from "@/lib/api";
 import Button from "@/components/ui/Button";
-import { Camera, Video, RotateCcw, Upload, X, ArrowLeft, CheckCircle, Loader2, Images } from "lucide-react";
+import { Camera, ImagePlus, Video, RotateCcw, Upload, X, ArrowLeft, CheckCircle, Loader2, Images } from "lucide-react";
 import Link from "next/link";
 
 export default function CapturePage({ params }) {
@@ -19,6 +19,7 @@ export default function CapturePage({ params }) {
   const canvasRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     api.get(`/weddings/public/${token}`).then((res) => setWedding(res.data)).catch(() => {});
@@ -39,6 +40,13 @@ export default function CapturePage({ params }) {
     }
   };
 
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+  };
+
   const capturePhoto = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -48,6 +56,20 @@ export default function CapturePage({ params }) {
     canvas.getContext("2d").drawImage(video, 0, 0);
     const url = canvas.toDataURL("image/jpeg", 0.9);
     setCaptured({ type: "photo", data: url });
+    stopCamera();
+    setStep("preview");
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.type.startsWith("video/")) {
+      setCaptured({ type: "video", data: URL.createObjectURL(file), blob: file });
+    } else {
+      setCaptured({ type: "photo", data: URL.createObjectURL(file), file });
+    }
+    stopCamera();
     setStep("preview");
   };
 
@@ -59,6 +81,7 @@ export default function CapturePage({ params }) {
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
       setCaptured({ type: "video", data: URL.createObjectURL(blob), blob });
+      stopCamera();
       setStep("preview");
     };
     recorderRef.current = recorder;
@@ -76,11 +99,15 @@ export default function CapturePage({ params }) {
     try {
       const fd = new FormData();
       if (captured.type === "photo") {
-        const res = await fetch(captured.data);
-        const blob = await res.blob();
-        fd.append("file", blob, `memory-${Date.now()}.jpg`);
+        if (captured.file) {
+          fd.append("file", captured.file, captured.file.name || `memory-${Date.now()}.jpg`);
+        } else {
+          const res = await fetch(captured.data);
+          const blob = await res.blob();
+          fd.append("file", blob, `memory-${Date.now()}.jpg`);
+        }
       } else {
-        fd.append("file", captured.blob, `memory-${Date.now()}.webm`);
+        fd.append("file", captured.blob, captured.blob?.name || `memory-${Date.now()}.webm`);
       }
 
       const xhr = new XMLHttpRequest();
@@ -198,8 +225,16 @@ export default function CapturePage({ params }) {
                 </button>
               )}
               <p className="text-xs text-white/40 mt-3">{mode === "video" ? "Hold to record" : "Tap to capture"}</p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/15 backdrop-blur border border-white/20 text-white text-sm font-medium hover:bg-white/25 transition-all"
+              >
+                <ImagePlus className="h-4 w-4" /> Upload from device
+              </button>
             </div>
           </div>
+
+          <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
         </>
       )}
 

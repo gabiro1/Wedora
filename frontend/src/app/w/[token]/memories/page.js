@@ -3,8 +3,9 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import EmptyState from "@/components/ui/EmptyState";
+import { useToast } from "@/components/ui/Toast";
 import { bentoSpan, BENTO_GRID, cn } from "@/lib/utils";
-import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Play, Images, Download } from "lucide-react";
+import { Camera, ArrowLeft, X, ChevronLeft, ChevronRight, Play, Images, Download, Trash2, Loader2 } from "lucide-react";
 
 export default function MemoriesPage({ params }) {
   const { token } = use(params);
@@ -15,6 +16,8 @@ export default function MemoriesPage({ params }) {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const { addToast } = useToast();
 
   const load = (p = 1, append = false) => {
     api.get(`/guest/${token}/memories?page=${p}&limit=30`)
@@ -23,13 +26,18 @@ export default function MemoriesPage({ params }) {
         if (append) {
           setMemories((prev) => [...prev, ...serverMemories]);
         } else {
-          let merged = [...serverMemories];
+          let local = [];
           try {
-            const mine = JSON.parse(localStorage.getItem(`wedora_my_memories_${token}`) || "[]");
-            mine.forEach((m) => {
-              if (m?.id && !merged.some((x) => x.id === m.id)) merged.unshift(m);
-            });
+            local = JSON.parse(localStorage.getItem(`wedora_my_memories_${token}`) || "[]");
           } catch {}
+          const localByToken = {};
+          local.forEach((m) => { if (m?.id && m?.uploadToken) localByToken[m.id] = m.uploadToken; });
+          const merged = serverMemories.map((m) =>
+            localByToken[m.id] ? { ...m, uploadToken: localByToken[m.id] } : m
+          );
+          local.forEach((m) => {
+            if (m?.id && !merged.some((x) => x.id === m.id)) merged.unshift(m);
+          });
           setMemories(merged);
         }
         setTotalPages(res.data.totalPages);
@@ -76,6 +84,30 @@ export default function MemoriesPage({ params }) {
       URL.revokeObjectURL(url);
     } catch {
       window.open(m.storageUrl, "_blank");
+    }
+  };
+
+  const handleDelete = async (m) => {
+    if (!m.uploadToken) return;
+    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    setDeletingId(m.id);
+    try {
+      await api.request(`/guest/${token}/memories/${m.id}`, {
+        method: "DELETE",
+        headers: { "X-Delete-Token": m.uploadToken },
+      });
+      setMemories((prev) => prev.filter((x) => x.id !== m.id));
+      try {
+        const key = `wedora_my_memories_${token}`;
+        const saved = JSON.parse(localStorage.getItem(key) || "[]").filter((x) => x.id !== m.id);
+        localStorage.setItem(key, JSON.stringify(saved));
+      } catch {}
+      if (selected?.id === m.id) setSelected(null);
+      addToast("Memory deleted", "success");
+    } catch {
+      addToast("Could not delete this memory", "error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -186,6 +218,19 @@ export default function MemoriesPage({ params }) {
       {/* Lightbox */}
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setSelected(null)}>
+          {selected.uploadToken && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(selected); }}
+              className="absolute top-4 left-4 text-white/60 hover:text-red-400 p-2 z-10"
+              aria-label="Delete memory"
+            >
+              {deletingId === selected.id ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Trash2 className="h-6 w-6" />
+              )}
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); download(selected); }}
             className="absolute top-4 right-14 text-white/60 hover:text-white p-2 z-10"

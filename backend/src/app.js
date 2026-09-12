@@ -51,6 +51,20 @@ app.post("/api/guest/:eventToken/contribute", validate(createContributionSchema)
   } catch (err) { next(err); }
 });
 
+app.delete("/api/guest/:eventToken/memories/:memId", async (req, res, next) => {
+  try {
+    const uploadToken = req.headers["x-delete-token"];
+    if (!uploadToken) {
+      return res.status(403).json({ success: false, message: "Delete token missing" });
+    }
+    const wedding = await prisma.wedding.findUnique({ where: { eventToken: req.params.eventToken } });
+    if (!wedding) return res.status(404).json({ success: false, message: "Wedding not found" });
+    const { memoryService } = await import("./services/memory.service.js");
+    const result = await memoryService.removeByToken(wedding.id, req.params.memId, uploadToken);
+    res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+});
+
 app.get("/api/guest/:eventToken/memories", async (req, res, next) => {
   try {
     const wedding = await prisma.wedding.findUnique({ where: { eventToken: req.params.eventToken } });

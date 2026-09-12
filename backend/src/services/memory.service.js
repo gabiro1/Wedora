@@ -1,5 +1,6 @@
 import prisma from "../config/db.js";
-import { NotFoundError } from "../utils/errors.js";
+import { randomBytes } from "node:crypto";
+import { NotFoundError, ForbiddenError } from "../utils/errors.js";
 import { cloudinary } from "../config/cloudinary.js";
 import { emitToWall, emitToWedding } from "../config/socket.js";
 
@@ -55,6 +56,9 @@ class MemoryService {
         ? this.generateImageThumbnail(publicId)
         : this.generateVideoThumbnail(publicId);
 
+    // Secret token returned only to the uploader, lets them delete their own memory
+    const uploadToken = randomBytes(16).toString("hex");
+
     // Save the uploaded memory in PostgreSQL
     const memory = await prisma.memory.create({
       data: {
@@ -68,6 +72,7 @@ class MemoryService {
         thumbnailUrl,
 
         publicId,
+        uploadToken,
 
         fileSize: file.size,
         mimeType: file.mimetype,
@@ -325,10 +330,6 @@ class MemoryService {
     if (!memory) {
       throw new NotFoundError("Memory");
     }
-
-    /**
-     * Delete the actual file from Cloudinary.
-     */
     if (memory.publicId) {
       try {
         const resourceType =
@@ -356,6 +357,24 @@ class MemoryService {
         moderationStatus: "REMOVED",
       },
     });
+  }
+
+  async removeByToken(weddingId, id, uploadToken) {
+    const memory = await prisma.memory.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!memory || memory.weddingId !== weddingId) {
+      throw new NotFoundError("Memory");
+    }
+
+    if (!memory.uploadToken || memory.uploadToken !== uploadToken) {
+      throw new ForbiddenError("You don't have permission to delete this memory");
+    }
+
+    return this.remove(id);
   }
 
   async report(id, reason, reporterIp) {

@@ -204,6 +204,7 @@ model Memory {
   storageUrl       String           @map("storage_url")
   thumbnailUrl     String?          @map("thumbnail_url")
   publicId         String?          @map("public_id")
+  uploadToken      String?          @map("upload_token")
   fileSize         Int              @map("file_size")
   duration         Int?
   mimeType         String           @map("mime_type")
